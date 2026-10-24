@@ -1,0 +1,31 @@
+name: Build ALLXITERCSR APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Android tools and apktool
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apktool python3-pil
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;35.0.0" "platform-tools"
+          echo "$ANDROID_HOME/build-tools/35.0.0" >> "$GITHUB_PATH"
+      - name: Build and sign debug APK
+        run: ./scripts/prepare_and_build.sh
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ALLXITERCSR-debug-apk
+          path: build/output/ALLXITERCSR-debug-signed.apk
+          if-no-files-found: error
